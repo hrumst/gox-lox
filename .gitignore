@@ -1,0 +1,8 @@
+.idea
+
+bin/
+
+local
+
+# dev build files
+build/dev/data
