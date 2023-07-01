@@ -9,16 +9,19 @@ import (
 type Interpreter struct {
 	writer      io.Writer
 	environment *Environment
-	globalFuncs *Environment
+	globals     *Environment
+	locals      map[parse.Expression]int
 }
 
 func NewInterpreter(writer io.Writer) *Interpreter {
 	globalFuncs := NewEnvironment(nil)
 	globalFuncs.Define("clock", scan.NewCallableValue(NewClockFunction()))
+
 	return &Interpreter{
 		writer:      writer,
 		environment: NewEnvironment(nil),
-		globalFuncs: globalFuncs,
+		globals:     globalFuncs,
+		locals:      make(map[parse.Expression]int),
 	}
 }
 
@@ -66,4 +69,16 @@ func (i *Interpreter) executeBlock(stmts []parse.Statement, nextEnv *Environment
 		}
 	}
 	return nil, nil
+}
+
+func (i *Interpreter) lookUpVariable(token scan.Token, expr parse.Expression) (*scan.LoxValue, error) {
+	distance, ok := i.locals[expr]
+	if ok {
+		return i.environment.getAt(distance, token)
+	}
+	return i.globals.Get(token)
+}
+
+func (i *Interpreter) resolve(expr parse.Expression, depth int) {
+	i.locals[expr] = depth
 }

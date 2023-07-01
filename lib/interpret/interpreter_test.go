@@ -598,7 +598,11 @@ func TestInterpreter_Evaluate(t *testing.T) {
 			fmt.Sprintf("interpreter_test_case_%d", i),
 			func(t *testing.T) {
 				buf := bytes.NewBufferString("")
-				err := NewInterpreter(buf).Interpret(tc.stmts)
+				interpreter := NewInterpreter(buf)
+				if err := NewResolver(interpreter).Resolve(tc.stmts); err != nil {
+					t.Fatal(err)
+				}
+				err := interpreter.Interpret(tc.stmts)
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expected, buf.String())
 			},

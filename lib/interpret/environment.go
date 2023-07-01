@@ -41,3 +41,19 @@ func (e *Environment) Assign(token scan.Token, value *scan.LoxValue) error {
 	}
 	return NewRuntimeError("undefined variable", &token)
 }
+
+func (e *Environment) ancestor(distance int) *Environment {
+	env := e
+	for i := 0; i < distance; i += 1 {
+		env = env.enclosing
+	}
+	return env
+}
+
+func (e *Environment) getAt(distance int, token scan.Token) (*scan.LoxValue, error) {
+	return e.ancestor(distance).Get(token)
+}
+
+func (e *Environment) assignAt(distance int, name scan.Token, value *scan.LoxValue) {
+	e.ancestor(distance).values[name.Lexeme] = value
+}

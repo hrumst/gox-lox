@@ -144,7 +144,7 @@ func (i *Interpreter) VisitLogicalExpr(expr *parse.LogicalExpression) (interface
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *parse.VariableExpression) (interface{}, error) {
-	return i.environment.Get(expr.Name)
+	return i.lookUpVariable(expr.Name, expr)
 }
 
 func (i *Interpreter) VisitAssignExpr(expr *parse.AssignExpression) (interface{}, error) {
@@ -152,8 +152,13 @@ func (i *Interpreter) VisitAssignExpr(expr *parse.AssignExpression) (interface{}
 	if err != nil {
 		return nil, err
 	}
-	if err := i.environment.Assign(expr.Name, value); err != nil {
-		return nil, err
+
+	if distance, ok := i.locals[expr]; ok {
+		i.environment.assignAt(distance, expr.Name, value)
+	} else {
+		if err := i.globals.Assign(expr.Name, value); err != nil {
+			return nil, err
+		}
 	}
 	return value, nil
 }
