@@ -12,6 +12,7 @@ type StatementInterpreter interface {
 	VisitStmtExecuteControl(stmt *StmtExecuteControl) (interface{}, error)
 	VisitStmtFunction(stmt *StmtFunction) (interface{}, error)
 	VisitStmtReturn(stmt *StmtReturn) (interface{}, error)
+	VisitStmtClass(stmt *StmtClass) (interface{}, error)
 }
 
 type Statement interface {
@@ -156,4 +157,22 @@ func NewStmtReturn(keyword scan.Token, value Expression) *StmtReturn {
 
 func (s *StmtReturn) Accept(interpreter StatementInterpreter) (interface{}, error) {
 	return interpreter.VisitStmtReturn(s)
+}
+
+type StmtClass struct {
+	Name       scan.Token
+	Methods    []Statement
+	SuperClass *VariableExpression
+}
+
+func NewStmtClass(name scan.Token, superClass *VariableExpression, methods []Statement) *StmtClass {
+	return &StmtClass{
+		Name:       name,
+		Methods:    methods,
+		SuperClass: superClass,
+	}
+}
+
+func (s *StmtClass) Accept(interpreter StatementInterpreter) (interface{}, error) {
+	return interpreter.VisitStmtClass(s)
 }

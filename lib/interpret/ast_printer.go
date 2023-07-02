@@ -10,6 +10,26 @@ type AstPrinter struct {
 	isReverseNotation bool
 }
 
+func (v *AstPrinter) VisitSuperExpr(expr *parse.SuperExpression) (interface{}, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (v *AstPrinter) VisitGetExpr(expr *parse.GetExpression) (interface{}, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (v *AstPrinter) VisitSetExpr(expr *parse.SetExpression) (interface{}, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (v *AstPrinter) VisitThisExpr(expr *parse.ThisExpression) (interface{}, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (v *AstPrinter) VisitCallExpr(expr *parse.CallExpression) (interface{}, error) {
 	//TODO implement me
 	panic("implement me")

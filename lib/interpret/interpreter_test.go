@@ -590,6 +590,359 @@ func TestInterpreter_Evaluate(t *testing.T) {
 				),
 			},
 			expected: "1\n2\n",
+		}, {
+			/*
+				class Cake {
+					taste(adjective) {
+					  return "The " + this.flavor + " cake is " + adjective + "!";
+					}
+				}
+				var cake = Cake();
+				cake.flavor = "German chocolate";
+				print cake.taste("delicious");
+			*/
+			stmts: []parse.Statement{
+				parse.NewStmtClass(
+					scan.NewToken(scan.IDENTIFIER, "Cake", nil, 0),
+					nil,
+					[]parse.Statement{
+						parse.NewStmtFunction(
+							scan.NewToken(scan.IDENTIFIER, "taste", nil, 0),
+							[]scan.Token{
+								scan.NewToken(scan.IDENTIFIER, "adjective", nil, 0),
+							},
+							[]parse.Statement{
+								parse.NewStmtReturn(
+									scan.NewToken(scan.RETURN, "return", nil, 0),
+									parse.NewBinaryExpression(
+										parse.NewBinaryExpression(
+											parse.NewBinaryExpression(
+												parse.NewBinaryExpression(
+													parse.NewLiteralExpression(
+														scan.NewLiteral(
+															scan.NewStringLoxValue("The "),
+														),
+													),
+													scan.NewToken(scan.PLUS, "+", nil, 0),
+													parse.NewGetExpression(
+														parse.NewThisExpression(
+															scan.NewToken(scan.THIS, "this", nil, 0),
+														),
+														scan.NewToken(scan.IDENTIFIER, "flavor", nil, 0),
+													),
+												),
+												scan.NewToken(scan.PLUS, "+", nil, 0),
+												parse.NewLiteralExpression(
+													scan.NewLiteral(
+														scan.NewStringLoxValue(" cake is "),
+													),
+												),
+											),
+											scan.NewToken(scan.PLUS, "+", nil, 0),
+											parse.NewVariableExpression(
+												scan.NewToken(scan.IDENTIFIER, "adjective", nil, 0),
+											),
+										),
+										scan.NewToken(scan.PLUS, "+", nil, 0),
+										parse.NewLiteralExpression(
+											scan.NewLiteral(
+												scan.NewStringLoxValue("!"),
+											),
+										),
+									),
+								),
+							},
+						),
+					},
+				),
+				parse.NewStmtVar(
+					scan.NewToken(scan.IDENTIFIER, "cake", nil, 0),
+					parse.NewCallExpression(
+						parse.NewVariableExpression(
+							scan.NewToken(scan.IDENTIFIER, "Cake", nil, 0),
+						),
+						scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+						[]parse.Expression{},
+					),
+				),
+				parse.NewStmtExpression(
+					parse.NewSetExpression(
+						parse.NewVariableExpression(
+							scan.NewToken(scan.IDENTIFIER, "cake", nil, 0),
+						),
+						scan.NewToken(scan.IDENTIFIER, "flavor", nil, 0),
+						parse.NewLiteralExpression(
+							scan.NewLiteral(
+								scan.NewStringLoxValue("German chocolate"),
+							),
+						),
+					),
+				),
+				parse.NewStmtPrint(
+					parse.NewCallExpression(
+						parse.NewGetExpression(
+							parse.NewVariableExpression(
+								scan.NewToken(scan.IDENTIFIER, "cake", nil, 0),
+							),
+							scan.NewToken(scan.IDENTIFIER, "taste", nil, 0),
+						),
+						scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+						[]parse.Expression{
+							parse.NewLiteralExpression(
+								scan.NewLiteral(
+									scan.NewStringLoxValue("delicious"),
+								),
+							),
+						},
+					),
+				),
+			},
+			expected: "The German chocolate cake is delicious!\n",
+		}, {
+			/*
+				class Circle {
+					init(radius, scale) {
+						this.radius = radius;
+						this.scale = scale;
+					}
+
+					area() {
+						return 3.141592653 * this.radius * this.radius * this.scale;
+					}
+				}
+				var circle = Circle(4, 2);
+				print circle.area();
+			*/
+			stmts: []parse.Statement{
+				parse.NewStmtClass(
+					scan.NewToken(scan.IDENTIFIER, "Circle", nil, 0),
+					nil,
+					[]parse.Statement{
+						parse.NewStmtFunction(
+							scan.NewToken(scan.IDENTIFIER, "init", nil, 0),
+							[]scan.Token{
+								scan.NewToken(scan.IDENTIFIER, "radius", nil, 0),
+								scan.NewToken(scan.IDENTIFIER, "scale", nil, 0),
+							},
+							[]parse.Statement{
+								parse.NewStmtExpression(
+									parse.NewSetExpression(
+										parse.NewThisExpression(
+											scan.NewToken(scan.THIS, "this", nil, 0),
+										),
+										scan.NewToken(scan.IDENTIFIER, "radius", nil, 0),
+										parse.NewVariableExpression(
+											scan.NewToken(scan.IDENTIFIER, "radius", nil, 0),
+										),
+									),
+								),
+								parse.NewStmtExpression(
+									parse.NewSetExpression(
+										parse.NewThisExpression(
+											scan.NewToken(scan.THIS, "this", nil, 0),
+										),
+										scan.NewToken(scan.IDENTIFIER, "scale", nil, 0),
+										parse.NewVariableExpression(
+											scan.NewToken(scan.IDENTIFIER, "scale", nil, 0),
+										),
+									),
+								),
+							},
+						),
+						parse.NewStmtFunction(
+							scan.NewToken(scan.IDENTIFIER, "area", nil, 0),
+							[]scan.Token{},
+							[]parse.Statement{
+								parse.NewStmtReturn(
+									scan.NewToken(scan.RETURN, "return", nil, 0),
+									parse.NewBinaryExpression(
+										parse.NewBinaryExpression(
+											parse.NewBinaryExpression(
+												parse.NewLiteralExpression(
+													scan.NewLiteral(
+														scan.NewFloatLoxValue(3.141592653),
+													),
+												),
+												scan.NewToken(scan.STAR, "*", nil, 0),
+												parse.NewGetExpression(
+													parse.NewThisExpression(
+														scan.NewToken(scan.THIS, "this", nil, 0),
+													),
+													scan.NewToken(scan.IDENTIFIER, "radius", nil, 0),
+												),
+											),
+											scan.NewToken(scan.STAR, "*", nil, 0),
+											parse.NewGetExpression(
+												parse.NewThisExpression(
+													scan.NewToken(scan.THIS, "this", nil, 0),
+												),
+												scan.NewToken(scan.IDENTIFIER, "radius", nil, 0),
+											),
+										),
+										scan.NewToken(scan.STAR, "*", nil, 0),
+										parse.NewGetExpression(
+											parse.NewThisExpression(
+												scan.NewToken(scan.THIS, "this", nil, 0),
+											),
+											scan.NewToken(scan.IDENTIFIER, "scale", nil, 0),
+										),
+									),
+								),
+							},
+						),
+					},
+				),
+
+				parse.NewStmtVar(
+					scan.NewToken(scan.IDENTIFIER, "circle", nil, 0),
+					parse.NewCallExpression(
+						parse.NewVariableExpression(
+							scan.NewToken(scan.IDENTIFIER, "Circle", nil, 0),
+						),
+						scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+						[]parse.Expression{
+							parse.NewLiteralExpression(
+								scan.NewLiteral(
+									scan.NewFloatLoxValue(4.),
+								),
+							),
+							parse.NewLiteralExpression(
+								scan.NewLiteral(
+									scan.NewFloatLoxValue(2.),
+								),
+							),
+						},
+					),
+				),
+
+				parse.NewStmtPrint(
+					parse.NewCallExpression(
+						parse.NewGetExpression(
+							parse.NewVariableExpression(
+								scan.NewToken(scan.IDENTIFIER, "circle", nil, 0),
+							),
+							scan.NewToken(scan.IDENTIFIER, "area", nil, 0),
+						),
+						scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+						[]parse.Expression{},
+					),
+				),
+			},
+			expected: "100.530964896\n",
+		}, {
+			stmts: []parse.Statement{
+				parse.NewStmtClass(
+					scan.NewToken(scan.IDENTIFIER, "A", nil, 0),
+					nil,
+					[]parse.Statement{
+						parse.NewStmtFunction(
+							scan.NewToken(scan.IDENTIFIER, "method", nil, 0),
+							[]scan.Token{},
+							[]parse.Statement{
+								parse.NewStmtReturn(
+									scan.NewToken(scan.RETURN, "return", nil, 0),
+									parse.NewLiteralExpression(
+										scan.NewLiteral(
+											scan.NewStringLoxValue("Method A"),
+										),
+									),
+								),
+							},
+						),
+					},
+				),
+
+				parse.NewStmtClass(
+					scan.NewToken(scan.IDENTIFIER, "B", nil, 0),
+					parse.NewVariableExpression(
+						scan.NewToken(scan.IDENTIFIER, "A", nil, 0),
+					),
+					[]parse.Statement{},
+				),
+
+				parse.NewStmtPrint(
+					parse.NewCallExpression(
+						parse.NewGetExpression(
+							parse.NewCallExpression(
+								parse.NewVariableExpression(
+									scan.NewToken(scan.IDENTIFIER, "B", nil, 0),
+								),
+								scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+								[]parse.Expression{},
+							),
+							scan.NewToken(scan.IDENTIFIER, "method", nil, 0),
+						),
+						scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+						[]parse.Expression{},
+					),
+				),
+
+				parse.NewStmtClass(
+					scan.NewToken(scan.IDENTIFIER, "C", nil, 0),
+					parse.NewVariableExpression(
+						scan.NewToken(scan.IDENTIFIER, "A", nil, 0),
+					),
+					[]parse.Statement{
+						parse.NewStmtFunction(
+							scan.NewToken(scan.IDENTIFIER, "method", nil, 0),
+							[]scan.Token{},
+							[]parse.Statement{
+								parse.NewStmtReturn(
+									scan.NewToken(scan.RETURN, "return", nil, 0),
+									parse.NewLiteralExpression(
+										scan.NewLiteral(
+											scan.NewStringLoxValue("Method C"),
+										),
+									),
+								),
+							},
+						),
+						parse.NewStmtFunction(
+							scan.NewToken(scan.IDENTIFIER, "test", nil, 0),
+							[]scan.Token{},
+							[]parse.Statement{
+								parse.NewStmtReturn(
+									scan.NewToken(scan.RETURN, "return", nil, 0),
+									parse.NewBinaryExpression(
+										parse.NewCallExpression(
+											parse.NewSuperExpression(
+												scan.NewToken(scan.SUPER, "super", nil, 0),
+												scan.NewToken(scan.IDENTIFIER, "method", nil, 0),
+											),
+											scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+											[]parse.Expression{},
+										),
+										scan.NewToken(scan.PLUS, "+", nil, 0),
+										parse.NewLiteralExpression(
+											scan.NewLiteral(
+												scan.NewStringLoxValue(" from C"),
+											),
+										),
+									),
+								),
+							},
+						),
+					},
+				),
+
+				parse.NewStmtPrint(
+					parse.NewCallExpression(
+						parse.NewGetExpression(
+							parse.NewCallExpression(
+								parse.NewVariableExpression(
+									scan.NewToken(scan.IDENTIFIER, "C", nil, 0),
+								),
+								scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+								[]parse.Expression{},
+							),
+							scan.NewToken(scan.IDENTIFIER, "test", nil, 0),
+						),
+						scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+						[]parse.Expression{},
+					),
+				),
+			},
+			expected: "Method A\nMethod A from C\n",
 		},
 	}
 
@@ -608,6 +961,4 @@ func TestInterpreter_Evaluate(t *testing.T) {
 			},
 		)
 	}
-
-	t.Skip()
 }

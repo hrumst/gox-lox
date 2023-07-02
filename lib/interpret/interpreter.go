@@ -15,7 +15,7 @@ type Interpreter struct {
 
 func NewInterpreter(writer io.Writer) *Interpreter {
 	globalFuncs := NewEnvironment(nil)
-	globalFuncs.Define("clock", scan.NewCallableValue(NewClockFunction()))
+	globalFuncs.Define("clock", scan.NewCallableLoxValue(NewClockFunction()))
 
 	return &Interpreter{
 		writer:      writer,
@@ -44,6 +44,8 @@ func (i *Interpreter) Evaluate(expr parse.Expression) (*scan.LoxValue, error) {
 		return rt.Value, nil
 	case *scan.LoxValue:
 		return rt, nil
+	case nil:
+		return scan.NewNilLoxValue(), nil
 	default:
 		return nil, NewRuntimeError("unsupported expression evaluate result type", nil)
 	}

@@ -11,6 +11,10 @@ type ExpressionVisitor interface {
 	VisitAssignExpr(expr *AssignExpression) (interface{}, error)
 	VisitLogicalExpr(expr *LogicalExpression) (interface{}, error)
 	VisitCallExpr(expr *CallExpression) (interface{}, error)
+	VisitGetExpr(expr *GetExpression) (interface{}, error)
+	VisitSetExpr(expr *SetExpression) (interface{}, error)
+	VisitThisExpr(expr *ThisExpression) (interface{}, error)
+	VisitSuperExpr(expr *SuperExpression) (interface{}, error)
 }
 
 type Expression interface {
@@ -146,4 +150,67 @@ func NewCallExpression(callee Expression, paren scan.Token, arguments []Expressi
 
 func (ce *CallExpression) Accept(visitor ExpressionVisitor) (interface{}, error) {
 	return visitor.VisitCallExpr(ce)
+}
+
+type GetExpression struct {
+	Object Expression
+	Name   scan.Token
+}
+
+func NewGetExpression(object Expression, name scan.Token) *GetExpression {
+	return &GetExpression{
+		Object: object,
+		Name:   name,
+	}
+}
+
+func (ge *GetExpression) Accept(visitor ExpressionVisitor) (interface{}, error) {
+	return visitor.VisitGetExpr(ge)
+}
+
+type SetExpression struct {
+	Object Expression
+	Name   scan.Token
+	Value  Expression
+}
+
+func NewSetExpression(object Expression, name scan.Token, value Expression) *SetExpression {
+	return &SetExpression{
+		Object: object,
+		Name:   name,
+		Value:  value,
+	}
+}
+func (se *SetExpression) Accept(visitor ExpressionVisitor) (interface{}, error) {
+	return visitor.VisitSetExpr(se)
+}
+
+type ThisExpression struct {
+	Keyword scan.Token
+}
+
+func NewThisExpression(keyword scan.Token) *ThisExpression {
+	return &ThisExpression{
+		Keyword: keyword,
+	}
+}
+
+func (te *ThisExpression) Accept(visitor ExpressionVisitor) (interface{}, error) {
+	return visitor.VisitThisExpr(te)
+}
+
+type SuperExpression struct {
+	Keyword scan.Token
+	Method  scan.Token
+}
+
+func NewSuperExpression(keyword scan.Token, method scan.Token) *SuperExpression {
+	return &SuperExpression{
+		Keyword: keyword,
+		Method:  method,
+	}
+}
+
+func (se *SuperExpression) Accept(visitor ExpressionVisitor) (interface{}, error) {
+	return visitor.VisitSuperExpr(se)
 }

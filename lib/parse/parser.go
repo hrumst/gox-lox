@@ -29,6 +29,8 @@ func (p *Parser) assignment() (Expression, error) {
 		}
 		if varExpr, ok := expr.(*VariableExpression); ok {
 			return NewAssignExpression(varExpr.Name, value), nil
+		} else if getExpr, ok := expr.(*GetExpression); ok {
+			return NewSetExpression(getExpr.Object, getExpr.Name, value), nil
 		}
 		return nil, NewParseError(equals, fmt.Errorf("invalid assignment target"))
 	}
@@ -203,6 +205,18 @@ func (p *Parser) call() (Expression, error) {
 	for {
 		if p.match(scan.LEFT_PAREN) {
 			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else if p.match(scan.DOT) {
+			name, err := p.consume(scan.IDENTIFIER, "expect property name after '.'.")
+			if err != nil {
+				return nil, err
+			}
+			expr = NewGetExpression(expr, name)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			break
 		}
@@ -244,6 +258,18 @@ func (p *Parser) primary() (Expression, error) {
 		return NewLiteralExpression(scan.NewLiteral(scan.NewNilLoxValue())), nil
 	} else if p.match(scan.NUMBER, scan.STRING) {
 		return NewLiteralExpression(p.previous().Literal), nil
+	} else if p.match(scan.SUPER) {
+		keyword := p.previous()
+		if _, err := p.consume(scan.DOT, "expect '.' after 'super'"); err != nil {
+			return nil, err
+		}
+		method, err := p.consume(scan.IDENTIFIER, "expect superclass method name")
+		if err != nil {
+			return nil, err
+		}
+		return NewSuperExpression(keyword, method), nil
+	} else if p.match(scan.THIS) {
+		return NewThisExpression(p.previous()), nil
 	} else if p.match(scan.IDENTIFIER) {
 		return NewVariableExpression(p.previous()), nil
 	} else if p.match(scan.LEFT_PAREN) {
@@ -479,7 +505,9 @@ func (p *Parser) varDeclaration() (Statement, error) {
 }
 
 func (p *Parser) declaration() (Statement, error) {
-	if p.match(scan.FUN) {
+	if p.match(scan.CLASS) {
+		return p.classDeclaration()
+	} else if p.match(scan.FUN) {
 		return p.function("function")
 	} else if p.match(scan.VAR) {
 		return p.varDeclaration()
@@ -569,4 +597,38 @@ func (p *Parser) returnStatement() (Statement, error) {
 		return nil, err
 	}
 	return NewStmtReturn(keyword, value), nil
+}
+
+func (p *Parser) classDeclaration() (Statement, error) {
+	name, err := p.consume(scan.IDENTIFIER, "expect class name")
+	if err != nil {
+		return nil, err
+	}
+
+	var superClass *VariableExpression
+	if p.match(scan.LESS) {
+		if _, err := p.consume(scan.IDENTIFIER, "expect superclass name"); err != nil {
+			return nil, err
+		}
+		superClass = NewVariableExpression(p.previous())
+	}
+
+	if _, err := p.consume(scan.LEFT_BRACE, "expect '{' before class body"); err != nil {
+		return nil, err
+	}
+
+	methods := make([]Statement, 0)
+	for !p.check(scan.RIGHT_BRACE) && !p.isAtEnd() {
+		funcStmt, err := p.function("method")
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, funcStmt)
+	}
+
+	if _, err := p.consume(scan.RIGHT_BRACE, "expect '}' after class body"); err != nil {
+		return nil, err
+	}
+
+	return NewStmtClass(name, superClass, methods), nil
 }

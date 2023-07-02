@@ -69,7 +69,57 @@ func (r *Resolver) VisitStmtReturn(stmt *parse.StmtReturn) (interface{}, error) 
 		return nil, NewRuntimeError("can't return from top-level code", &stmt.Keyword)
 	}
 	if stmt.Value != nil {
+		if r.currentFuncType == inClassInitializerType {
+			return nil, NewRuntimeError("can't return a value from an initializer", &stmt.Keyword)
+		}
 		return nil, r.resolveExpr(stmt.Value)
 	}
+	return nil, nil
+}
+
+func (r *Resolver) VisitStmtClass(stmt *parse.StmtClass) (interface{}, error) {
+	enclosingClass := r.currentClassType
+	r.currentClassType = inClassType
+
+	if err := r.declare(stmt.Name); err != nil {
+		return nil, err
+	}
+	r.define(stmt.Name)
+
+	if stmt.SuperClass != nil && stmt.SuperClass.Name.Lexeme == stmt.Name.Lexeme {
+		return nil, NewRuntimeError("a class can't inherit from itself", &stmt.SuperClass.Name)
+	}
+
+	if stmt.SuperClass != nil {
+		r.currentClassType = inSubClassType
+		if err := r.resolveExpr(stmt.SuperClass); err != nil {
+			return nil, err
+		}
+	}
+
+	if stmt.SuperClass != nil {
+		r.beginScope()
+		r.scopes[len(r.scopes)-1]["super"] = true
+	}
+	r.beginScope()
+
+	r.scopes[len(r.scopes)-1]["this"] = true
+	for _, stmt := range stmt.Methods {
+		declarationType := inClassMethodType
+		stmtFunc := stmt.(*parse.StmtFunction)
+		if stmtFunc.Name.Lexeme == "init" {
+			declarationType = inClassInitializerType
+		}
+		if err := r.resolveFunction(stmtFunc, declarationType); err != nil {
+			return nil, err
+		}
+	}
+
+	r.endScope()
+	if stmt.SuperClass != nil {
+		r.endScope()
+	}
+
+	r.currentClassType = enclosingClass
 	return nil, nil
 }

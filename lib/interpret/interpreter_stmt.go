@@ -74,7 +74,7 @@ func (i *Interpreter) VisitStmtExecuteControl(stmt *parse.StmtExecuteControl) (i
 }
 
 func (i *Interpreter) VisitStmtFunction(stmt *parse.StmtFunction) (interface{}, error) {
-	function := scan.NewCallableValue(NewLoxFunction(i, stmt, i.environment))
+	function := scan.NewCallableLoxValue(NewLoxFunction(i, stmt, i.environment, false))
 	i.environment.Define(stmt.Name.Lexeme, function)
 	return nil, nil
 }
@@ -98,6 +98,43 @@ func (i *Interpreter) VisitStmtPrint(stmt *parse.StmtPrint) (interface{}, error)
 	}
 
 	if _, err := fmt.Fprintln(i.writer, value.String()); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (i *Interpreter) VisitStmtClass(stmt *parse.StmtClass) (interface{}, error) {
+	i.environment.Define(stmt.Name.Lexeme, nil)
+	environment := i.environment
+
+	var superClass *LoxClass
+	if stmt.SuperClass != nil {
+		superClassLoxValue, err := i.Evaluate(stmt.SuperClass)
+		if err != nil {
+			return nil, err
+		}
+		superClassLox, err := superClassLoxValue.Callable()
+		if err != nil {
+			return nil, NewRuntimeError(
+				fmt.Sprintf("superclass must be a class. error: %s", err.Error()),
+				&stmt.SuperClass.Name,
+			)
+		}
+
+		environment = NewEnvironment(environment)
+		environment.Define("super", superClassLoxValue)
+
+		superClass = superClassLox.(*LoxClass)
+	}
+
+	methods := make(map[string]scan.LoxCallable)
+	for _, method := range stmt.Methods {
+		stmtFunc := method.(*parse.StmtFunction)
+		loxFunc := NewLoxFunction(i, stmtFunc, environment, stmtFunc.Name.Lexeme == "init")
+		methods[stmtFunc.Name.Lexeme] = loxFunc
+	}
+	class := NewLoxClass(i, stmt, superClass, methods)
+	if err := i.environment.Assign(stmt.Name, scan.NewClassLoxValue(scan.LoxClass(class))); err != nil {
 		return nil, err
 	}
 	return nil, nil

@@ -63,3 +63,32 @@ func (r *Resolver) VisitCallExpr(expr *parse.CallExpression) (interface{}, error
 	}
 	return nil, nil
 }
+
+func (r *Resolver) VisitSuperExpr(expr *parse.SuperExpression) (interface{}, error) {
+	if r.currentClassType == noneClassType {
+		return nil, NewRuntimeError("can't use 'super' outside of a class", &expr.Keyword)
+	} else if r.currentClassType != inSubClassType {
+		return nil, NewRuntimeError("can't use 'super' in a class with no superclass", &expr.Keyword)
+	}
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
+}
+
+func (r *Resolver) VisitThisExpr(expr *parse.ThisExpression) (interface{}, error) {
+	if r.currentClassType == noneClassType {
+		return nil, NewRuntimeError("can't use 'this' outside of a class", &expr.Keyword)
+	}
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
+}
+
+func (r *Resolver) VisitSetExpr(expr *parse.SetExpression) (interface{}, error) {
+	if err := r.resolveExpr(expr.Value); err != nil {
+		return nil, err
+	}
+	return nil, r.resolveExpr(expr.Object)
+}
+
+func (r *Resolver) VisitGetExpr(expr *parse.GetExpression) (interface{}, error) {
+	return nil, r.resolveExpr(expr.Object)
+}

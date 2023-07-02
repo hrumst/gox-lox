@@ -131,4 +131,84 @@ func TestResolver_Resolve(t *testing.T) {
 		err := NewResolver(interpreter).Resolve(testStmt)
 		assert.Errorf(t, err, "can't read local variable in its own initializer")
 	})
+
+	t.Run("classSelfInheritance", func(t *testing.T) {
+		testStmt := []parse.Statement{
+			parse.NewStmtBlock(
+				[]parse.Statement{
+					parse.NewStmtClass(
+						scan.NewToken(scan.IDENTIFIER, "A", nil, 0),
+						parse.NewVariableExpression(
+							scan.NewToken(scan.IDENTIFIER, "A", nil, 0),
+						),
+						[]parse.Statement{},
+					),
+				},
+			),
+		}
+
+		buf := bytes.NewBufferString("")
+		interpreter := NewInterpreter(buf)
+		err := NewResolver(interpreter).Resolve(testStmt)
+		assert.Errorf(t, err, "a class can't inherit from itself")
+	})
+
+	t.Run("incorrectUseSuperStmt", func(t *testing.T) {
+		// var i = i;
+		testStmt := []parse.Statement{
+			parse.NewStmtBlock(
+				[]parse.Statement{
+					parse.NewStmtExpression(
+						parse.NewCallExpression(
+							parse.NewSuperExpression(
+								scan.NewToken(scan.SUPER, "super", nil, 0),
+								scan.NewToken(scan.IDENTIFIER, "method", nil, 0),
+							),
+							scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+							[]parse.Expression{},
+						),
+					),
+				},
+			),
+		}
+
+		buf := bytes.NewBufferString("")
+		interpreter := NewInterpreter(buf)
+		err := NewResolver(interpreter).Resolve(testStmt)
+		assert.Errorf(t, err, "can't use 'super' outside of a class")
+
+		testStmt1 := []parse.Statement{
+			parse.NewStmtBlock(
+				[]parse.Statement{
+					parse.NewStmtClass(
+						scan.NewToken(scan.IDENTIFIER, "A", nil, 0),
+						nil,
+						[]parse.Statement{
+							parse.NewStmtFunction(
+								scan.NewToken(scan.IDENTIFIER, "test", nil, 0),
+								[]scan.Token{},
+								[]parse.Statement{
+									parse.NewStmtExpression(
+										parse.NewCallExpression(
+											parse.NewSuperExpression(
+												scan.NewToken(scan.SUPER, "super", nil, 0),
+												scan.NewToken(scan.IDENTIFIER, "method", nil, 0),
+											),
+											scan.NewToken(scan.RIGHT_PAREN, ")", nil, 0),
+											[]parse.Expression{},
+										),
+									),
+								},
+							),
+						},
+					),
+				},
+			),
+		}
+
+		buf1 := bytes.NewBufferString("")
+		interpreter1 := NewInterpreter(buf1)
+		err1 := NewResolver(interpreter1).Resolve(testStmt1)
+		assert.Errorf(t, err1, "can't use 'super' in a class with no superclass")
+	})
 }

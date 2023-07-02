@@ -10,18 +10,31 @@ type functionType int
 const (
 	noneFunctionType functionType = iota
 	inFunctionType
+	inClassMethodType
+	inClassInitializerType
+)
+
+type classType int
+
+const (
+	noneClassType = iota
+	inClassType
+	inSubClassType
 )
 
 type Resolver struct {
-	scopes          []map[string]bool
-	interpreter     *Interpreter
-	currentFuncType functionType
+	scopes           []map[string]bool
+	interpreter      *Interpreter
+	currentFuncType  functionType
+	currentClassType classType
 }
 
 func NewResolver(interpreter *Interpreter) *Resolver {
 	return &Resolver{
-		interpreter: interpreter,
-		scopes:      make([]map[string]bool, 0),
+		interpreter:      interpreter,
+		scopes:           make([]map[string]bool, 0),
+		currentFuncType:  noneFunctionType,
+		currentClassType: noneClassType,
 	}
 }
 

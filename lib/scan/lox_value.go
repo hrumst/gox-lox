@@ -11,6 +11,8 @@ const (
 	loxValueBoolType
 	loxValueNilType
 	loxCallableType
+	loxClassType
+	loxClassInstanceType
 )
 
 type NilObject struct{}
@@ -22,6 +24,8 @@ type LoxValue struct {
 	boolValue      bool
 	nilObject      NilObject
 	callableObject LoxCallable
+	classObject    LoxClass
+	classInstance  LoxClassInstance
 }
 
 func (l *LoxValue) IsNumber() bool {
@@ -44,10 +48,42 @@ func (l *LoxValue) IsCallable() bool {
 	return l.valueType == loxCallableType
 }
 
+func (l *LoxValue) IsClass() bool {
+	return l.valueType == loxClassType
+}
+
+func (l *LoxValue) IsClassInstance() bool {
+	return l.valueType == loxClassInstanceType
+}
+
+func (l *LoxValue) ClassInstance() (LoxClassInstance, error) {
+	switch l.valueType {
+	case loxClassInstanceType:
+		return l.classInstance, nil
+	case loxCallableType:
+		return nil, fmt.Errorf("function is not a class instance")
+	case loxValueFloatType:
+		return nil, fmt.Errorf("float is not a class instance")
+	case loxValueStringType:
+		return nil, fmt.Errorf("string is not a class instance")
+	case loxValueBoolType:
+		return nil, fmt.Errorf("bool is not a class instance")
+	case loxValueNilType:
+		return nil, fmt.Errorf("nil is not a class instance")
+	case loxClassType:
+		return nil, fmt.Errorf("class is not a class instance")
+	}
+
+	// unreachable
+	panic("use not implemented value type")
+}
+
 func (l *LoxValue) Callable() (LoxCallable, error) {
 	switch l.valueType {
 	case loxCallableType:
 		return l.callableObject, nil
+	case loxClassType:
+		return l.classObject, nil
 	case loxValueFloatType:
 		return nil, fmt.Errorf("float is not a function")
 	case loxValueStringType:
@@ -56,6 +92,8 @@ func (l *LoxValue) Callable() (LoxCallable, error) {
 		return nil, fmt.Errorf("bool is not a function")
 	case loxValueNilType:
 		return nil, fmt.Errorf("nil is not a function")
+	case loxClassInstanceType:
+		return nil, fmt.Errorf("class is not a function")
 	}
 
 	// unreachable
@@ -74,6 +112,8 @@ func (l *LoxValue) Number() (float64, error) {
 		return 0., fmt.Errorf("nil is not a number")
 	case loxCallableType:
 		return 0., fmt.Errorf("function is not a number")
+	case loxClassInstanceType, loxClassType:
+		return 0., fmt.Errorf("class is not a number")
 	}
 
 	// unreachable
@@ -91,7 +131,11 @@ func (l *LoxValue) String() string {
 	case loxValueNilType:
 		return "nil"
 	case loxCallableType:
-		return "[function]"
+		return l.callableObject.String()
+	case loxClassType:
+		return l.classObject.String()
+	case loxClassInstanceType:
+		return l.classInstance.String()
 	}
 
 	// unreachable
@@ -137,9 +181,23 @@ func NewNilLoxValue() *LoxValue {
 	}
 }
 
-func NewCallableValue(callable LoxCallable) *LoxValue {
+func NewCallableLoxValue(callable LoxCallable) *LoxValue {
 	return &LoxValue{
 		valueType:      loxCallableType,
 		callableObject: callable,
+	}
+}
+
+func NewClassLoxValue(callable LoxClass) *LoxValue {
+	return &LoxValue{
+		valueType:   loxClassType,
+		classObject: callable,
+	}
+}
+
+func NewClassInstanceLoxValue(classInstance LoxClassInstance) *LoxValue {
+	return &LoxValue{
+		valueType:     loxClassInstanceType,
+		classInstance: classInstance,
 	}
 }

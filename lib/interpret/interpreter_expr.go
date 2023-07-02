@@ -192,3 +192,73 @@ func (i *Interpreter) VisitCallExpr(expr *parse.CallExpression) (interface{}, er
 
 	return calleeFunc.Call(arguments)
 }
+
+func (i *Interpreter) VisitSuperExpr(expr *parse.SuperExpression) (interface{}, error) {
+	distance := i.locals[expr]
+	superclass, err := i.environment.getAt(
+		distance,
+		scan.NewToken(scan.SUPER, "super", nil, expr.Keyword.Line),
+	)
+	if err != nil {
+		return nil, err
+	}
+	superclassInstance, err := i.environment.getAt(
+		distance-1,
+		scan.NewToken(scan.THIS, "this", nil, expr.Keyword.Line),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	superclassValue, err := superclass.Callable()
+	if err != nil {
+		return nil, err
+	}
+	superclassInstanceValue, err := superclassInstance.ClassInstance()
+	if err != nil {
+		return nil, err
+	}
+
+	method := superclassValue.(*LoxClass).findMethod(expr.Method.Lexeme)
+	loxCallValue := scan.NewCallableLoxValue(method.(*LoxFunction).bind(superclassInstanceValue.(*LoxClassInstance)))
+	return loxCallValue, nil
+}
+
+func (i *Interpreter) VisitThisExpr(expr *parse.ThisExpression) (interface{}, error) {
+	return i.lookUpVariable(expr.Keyword, expr)
+}
+
+func (i *Interpreter) VisitSetExpr(expr *parse.SetExpression) (interface{}, error) {
+	object, err := i.Evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+	if !object.IsClassInstance() {
+		return nil, NewRuntimeError("only instances have fields", &expr.Name)
+	}
+	value, err := i.Evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+	instance, err := object.ClassInstance()
+	if err != nil {
+		return nil, err
+	}
+	instance.Set(expr.Name, value)
+	return nil, nil
+}
+
+func (i *Interpreter) VisitGetExpr(expr *parse.GetExpression) (interface{}, error) {
+	object, err := i.Evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+	if !object.IsClassInstance() {
+		return nil, NewRuntimeError("only instances have properties", &expr.Name)
+	}
+	instance, err := object.ClassInstance()
+	if err != nil {
+		return nil, err
+	}
+	return instance.Get(expr.Name)
+}
