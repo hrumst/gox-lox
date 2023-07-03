@@ -195,10 +195,7 @@ func (i *Interpreter) VisitCallExpr(expr *parse.CallExpression) (interface{}, er
 
 func (i *Interpreter) VisitSuperExpr(expr *parse.SuperExpression) (interface{}, error) {
 	distance := i.locals[expr]
-	superclass, err := i.environment.getAt(
-		distance,
-		scan.NewToken(scan.SUPER, "super", nil, expr.Keyword.Line),
-	)
+	superclass, err := i.environment.getAt(distance, expr.Keyword)
 	if err != nil {
 		return nil, err
 	}

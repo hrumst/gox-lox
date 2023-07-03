@@ -830,6 +830,26 @@ func TestInterpreter_Evaluate(t *testing.T) {
 			},
 			expected: "100.530964896\n",
 		}, {
+			/*
+					class A {
+						method() {
+							return "Method A";
+						}
+					}
+
+				    class B < A {}
+					print B().method();
+
+				  	class C < A {
+						method() {
+							print "Method C";
+						}
+						test() {
+							return super.method() + " from C";
+						}
+				  	}
+				    print C().test();
+			*/
 			stmts: []parse.Statement{
 				parse.NewStmtClass(
 					scan.NewToken(scan.IDENTIFIER, "A", nil, 0),
